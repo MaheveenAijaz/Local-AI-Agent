@@ -1,0 +1,8 @@
+flask
+flask-cors
+langchain
+langchain-community
+sentence-transformers
+chromadb
+pypdf
+ollama

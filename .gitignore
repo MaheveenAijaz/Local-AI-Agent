@@ -1,0 +1,33 @@
+# databases
+*.db
+*.sqlite3
+
+# uploads
+uploads/
+
+# zip files
+*.zip
+
+# python cache
+__pycache__/
+*.pyc
+
+# venv
+venv/
+.venv/
+
+# ML / embeddings
+chroma_db/
+models/
+backend/models/
+*.bin
+*.h5
+*.pkl
+*.pt
+
+# logs / temp
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

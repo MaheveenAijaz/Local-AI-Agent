@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LocalStorage Test</title>
+</head>
+<body>
+    <h2>LocalStorage Test</h2>
+    <button onclick="testLocalStorage()">Test LocalStorage</button>
+    <div id="result"></div>
+    
+    <script>
+        function testLocalStorage() {
+            try {
+                // Try to save and read from localStorage
+                localStorage.setItem('test', 'working');
+                const value = localStorage.getItem('test');
+                document.getElementById('result').innerHTML = 
+                    'LocalStorage test: ' + (value === 'working' ? '✅ WORKING' : '❌ FAILED');
+                
+                // Test if we can save user data
+                const userData = {
+                    username: 'testuser',
+                    loggedIn: true,
+                    timestamp: new Date().toISOString()
+                };
+                
+                localStorage.setItem('user', JSON.stringify(userData));
+                const savedUser = localStorage.getItem('user');
+                
+                document.getElementById('result').innerHTML += '<br>User data test: ' + 
+                    (savedUser ? '✅ SAVED' : '❌ NOT SAVED');
+                    
+                if (savedUser) {
+                    document.getElementById('result').innerHTML += '<br>Data: ' + savedUser;
+                }
+                
+            } catch (error) {
+                document.getElementById('result').innerHTML = '❌ ERROR: ' + error.message;
+            }
+        }
+        
+        // Run test on page load
+        document.addEventListener('DOMContentLoaded', testLocalStorage);
+    </script>
+</body>
+</html>

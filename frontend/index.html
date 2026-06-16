@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local AI Agent Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        body {
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        
+        /* Header */
+        .header {
+            background: #1e293b;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo h1 {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #60a5fa 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #60a5fa 0%, #8b5cf6 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .logout-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: 2px solid #475569;
+            border-radius: 8px;
+            color: #cbd5e1;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .logout-btn:hover {
+            border-color: #60a5fa;
+            color: #60a5fa;
+            background: rgba(96, 165, 250, 0.1);
+        }
+        
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            min-height: calc(100vh - 81px);
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: #1e293b;
+            border-right: 1px solid #334155;
+            padding: 30px 0;
+        }
+        
+        .nav-section {
+            margin-bottom: 30px;
+        }
+        
+        .nav-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0 24px;
+            margin-bottom: 12px;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 24px;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+            cursor: pointer;
+        }
+        
+        .nav-item:hover {
+            background: rgba(96, 165, 250, 0.1);
+            color: #60a5fa;
+        }
+        
+        .nav-item.active {
+            background: rgba(96, 165, 250, 0.1);
+            color: #60a5fa;
+            border-left-color: #60a5fa;
+        }
+        
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+        
+        /* Content Sections */
+        .content-section {
+            display: none;
+        }
+        
+        .content-section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Section Headers */
+        .section-header {
+            margin-bottom: 30px;
+        }
+        
+        .section-header h2 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .section-header p {
+            color: #94a3b8;
+            font-size: 16px;
+        }
+        
+        /* Cards Grid for Dashboard */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+        
+        .card {
+            background: #1e293b;
+            border-radius: 16px;
+            padding: 30px;
+            border: 1px solid #334155;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: #60a5fa;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-content {
+            color: #cbd5e1;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #60a5fa 0%, #8b5cf6 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(96, 165, 250, 0.3);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid #475569;
+            color: #cbd5e1;
+        }
+        
+        .btn-secondary:hover {
+            border-color: #60a5fa;
+            color: #60a5fa;
+            background: rgba(96, 165, 250, 0.1);
+        }
+        
+        /* Chat Section */
+        .chat-container {
+            display: flex;
+            gap: 24px;
+            height: calc(100vh - 200px);
+        }
+        
+        .chat-sidebar {
+            width: 280px;
+            background: #1e293b;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-sessions {
+            flex: 1;
+            margin: 20px 0;
+        }
+        
+        .session {
+            padding: 12px 16px;
+            background: #0f172a;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        
+        .session:hover {
+            border-color: #60a5fa;
+            background: rgba(96, 165, 250, 0.1);
+        }
+        
+        .session.active {
+            border-color: #60a5fa;
+            background: rgba(96, 165, 250, 0.1);
+            color: #60a5fa;
+        }
+        
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1e293b;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            overflow: hidden;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 16px;
+            border-radius: 12px;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .user-message {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .ai-message {
+            background: #334155;
+            color: #e2e8f0;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .ai-message .message-header {
+            color: #60a5fa;
+        }
+        
+        .user-message .message-header {
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .message-content {
+            line-height: 1.6;
+            font-size: 15px;
+        }
+        
+        .chat-input {
+            padding: 24px;
+            border-top: 1px solid #334155;
+            background: #1e293b;
+            display: flex;
+            gap: 12px;
+        }
+        
+        .chat-input textarea {
+            flex: 1;
+            padding: 16px;
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 12px;
+            color: #e2e8f0;
+            font-size: 15px;
+            resize: none;
+            min-height: 60px;
+            font-family: inherit;
+        }
+        
+        .chat-input textarea:focus {
+            outline: none;
+            border-color: #60a5fa;
+        }
+        
+        .chat-input button {
+            padding: 0 30px;
+            background: linear-gradient(135deg, #60a5fa 0%, #8b5cf6 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .chat-input button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        .chat-input button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* File Upload Section */
+        .upload-container {
+            max-width: 800px;
+        }
+        
+        .upload-area {
+            background: #1e293b;
+            border: 2px dashed #475569;
+            border-radius: 16px;
+            padding: 60px 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            border-color: #60a5fa;
+            background: rgba(96, 165, 250, 0.05);
+        }
+        
+        .upload-area.dragover {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            color: #60a5fa;
+            margin-bottom: 20px;
+        }
+        
+        .file-list {
+            background: #1e293b;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            padding: 24px;
+        }
+        
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            background: #0f172a;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border: 1px solid #334155;
+        }
+        
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .file-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(96, 165, 250, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #60a5fa;
+        }
+        
+        .file-name {
+            font-weight: 500;
+        }
+        
+        .file-size {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+        
+        .file-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-success {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+        
+        .status-processing {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+        }
+        
+        /* Model Management Section */
+        .models-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+        
+        .model-card {
+            background: #1e293b;
+            border-radius: 16px;
+            padding: 30px;
+            border: 1px solid #334155;
+            transition: all 0.3s;
+        }
+        
+        .model-card.active {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+        
+        .model-card:hover {
+            transform: translateY(-5px);
+            border-color: #60a5fa;
+        }
+        
+        .model-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .model-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .model-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-loaded {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+        
+        .status-available {
+            background: rgba(96, 165, 250, 0.2);
+            color: #60a5fa;
+        }
+        
+        .model-stats {
+            display: flex;
+            gap: 20px;
+            margin: 15px 0;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+        
+        .model-desc {
+            color: #cbd5e1;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        /* API & Tools Section */
+        .api-container {
+            max-width: 800px;
+        }
+        
+        .api-endpoints {
+            background: #1e293b;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .endpoint {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid #334155;
+        }
+        
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .method {
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .method-get {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+        
+        .method-post {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+        }
+        
+        .endpoint-url {
+            font-family: 'Monaco', 'Courier New', monospace;
+            color: #cbd5e1;
+            font-size: 14px;
+        }
+        
+        .endpoint-desc {
+            color: #94a3b8;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .api-key-box {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid #334155;
+            margin-bottom: 30px;
+        }
+        
+        .api-key {
+            font-family: 'Monaco', 'Courier New', monospace;
+            background: #1e293b;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+            word-break: break-all;
+            color: #60a5fa;
+        }
+        
+        /* Thinking animation */
+        .thinking {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #94a3b8;
+        }
+        
+        .thinking-dots {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .thinking-dots span {
+            width: 8px;
+            height: 8px;
+            background: #60a5fa;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        
+        .thinking-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .thinking-dots span:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <i class="fas fa-robot" style="color: #60a5fa;"></i>
+            <h1>Local AI Agent</h1>
+        </div>
+        <div class="user-info">
+            <div class="avatar" id="userAvatar">U</div>
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </header>
+    
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="nav-section">
+                <div class="nav-title">Main</div>
+                <div class="nav-item active" onclick="switchSection('dashboard')">
+                    <i class="fas fa-home"></i> Dashboard
+                </div>
+                <div class="nav-item" onclick="switchSection('chat')">
+                    <i class="fas fa-comment"></i> AI Chat
+                </div>
+                <div class="nav-item" onclick="switchSection('files')">
+                    <i class="fas fa-file"></i> File Analysis
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-title">AI Models</div>
+                <div class="nav-item" onclick="switchSection('models')">
+                    <i class="fas fa-brain"></i> Model Management
+                </div>
+                <div class="nav-item" onclick="switchSection('api')">
+                    <i class="fas fa-code"></i> API & Tools
+                </div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-title">System</div>
+                <div class="nav-item" onclick="switchSection('settings')">
+                    <i class="fas fa-cog"></i> Settings
+                </div>
+                <div class="nav-item" onclick="switchSection('analytics')">
+                    <i class="fas fa-chart-bar"></i> Analytics
+                </div>
+            </div>
+            
+            <div class="nav-section" style="margin-top: auto;">
+                <div class="nav-item" onclick="showSystemInfo()">
+                    <i class="fas fa-info-circle"></i> System Info
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="content-section active">
+                <div class="section-header">
+                    <h2><i class="fas fa-tachometer-alt"></i> Dashboard</h2>
+                    <p>Welcome to your Local AI Agent. Everything runs securely on your machine.</p>
+                </div>
+                
+                <div class="cards-grid">
+                    <div class="card" onclick="switchSection('chat')">
+                        <div class="card-title">
+                            <i class="fas fa-comment-dots"></i> AI Chat
+                        </div>
+                        <div class="card-content">
+                            Chat with your local AI model. Supports context memory and multi-turn conversations.
+                        </div>
+                        <button class="btn">
+                            <i class="fas fa-arrow-right"></i> Start Chat
+                        </button>
+                    </div>
+                    
+                    <div class="card" onclick="switchSection('files')">
+                        <div class="card-title">
+                            <i class="fas fa-file-upload"></i> File Analysis
+                        </div>
+                        <div class="card-content">
+                            Upload and analyze documents, images, and audio files with AI-powered insights.
+                        </div>
+                        <button class="btn">
+                            <i class="fas fa-upload"></i> Upload Files
+                        </button>
+                    </div>
+                    
+                    <div class="card" onclick="switchSection('models')">
+                        <div class="card-title">
+                            <i class="fas fa-brain"></i> Model Management
+                        </div>
+                        <div class="card-content">
+                            Load, unload, and switch between different AI models. Monitor performance metrics.
+                        </div>
+                        <button class="btn">
+                            <i class="fas fa-cog"></i> Manage Models
+                        </button>
+                    </div>
+                    
+                    <div class="card" onclick="switchSection('api')">
+                        <div class="card-title">
+                            <i class="fas fa-code"></i> API & Tools
+                        </div>
+                        <div class="card-content">
+                            Access REST API, command-line tools, and integration options for developers.
+                        </div>
+                        <button class="btn">
+                            <i class="fas fa-external-link-alt"></i> Open API
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Quick Stats -->
+                <div class="section-header" style="margin-top: 40px;">
+                    <h2><i class="fas fa-chart-line"></i> System Status</h2>
+                </div>
+                
+                <div class="cards-grid">
+                    <div class="card">
+                        <div class="card-title">
+                            <i class="fas fa-memory"></i> Memory Usage
+                        </div>
+                        <div class="card-content">
+                            <div style="font-size: 32px; font-weight: 700; margin: 10px 0;">3.2 GB</div>
+                            <div style="height: 8px; background: #334155; border-radius: 4px; overflow: hidden;">
+                                <div style="width: 40%; height: 100%; background: linear-gradient(90deg, #60a5fa, #8b5cf6);"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-title">
+                            <i class="fas fa-bolt"></i> Response Time
+                        </div>
+                        <div class="card-content">
+                            <div style="font-size: 32px; font-weight: 700; margin: 10px 0;">0.8s</div>
+                            <div style="color: #10b981;">↓ 12% from last week</div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-title">
+                            <i class="fas fa-database"></i> Total Queries
+                        </div>
+                        <div class="card-content">
+                            <div style="font-size: 32px; font-weight: 700; margin: 10px 0;">1,247</div>
+                            <div style="color: #10b981;">↑ 24% this month</div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-title">
+                            <i class="fas fa-shield-alt"></i> Privacy Score
+                        </div>
+                        <div class="card-content">
+                            <div style="font-size: 32px; font-weight: 700; margin: 10px 0;">100%</div>
+                            <div style="color: #10b981;">All data processed locally</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Chat Section -->
+            <section id="chat" class="content-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-comment"></i> AI Chat Interface</h2>
+                    <p>Chat with your local AI model in real-time. Your conversations never leave your computer.</p>
+                </div>
+                
+                <div class="chat-container">
+                    <div class="chat-sidebar">
+                        <h3>Chat Sessions</h3>
+                        <div class="chat-sessions">
+                            <div class="session active">General Assistant</div>
+                            <div class="session">Code Helper</div>
+                            <div class="session">Creative Writing</div>
+                            <div class="session">Document Analysis</div>
+                        </div>
+                        <button class="btn" onclick="newChatSession()">
+                            <i class="fas fa-plus"></i> New Chat
+                        </button>
+                    </div>
+                    
+                    <div class="chat-main">
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="message ai-message">
+                                <div class="message-header">
+                                    <i class="fas fa-robot"></i> Local AI Assistant
+                                </div>
+                                <div class="message-content">
+                                    Hello! I'm your local AI assistant. How can I help you today? I run completely on your machine, so everything is private and secure.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="chat-input">
+                            <textarea id="chatInput" placeholder="Type your message here... Press Shift+Enter for new line." rows="3"></textarea>
+                            <button id="sendButton" onclick="sendMessage()">
+                                <i class="fas fa-paper-plane"></i> Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- File Analysis Section -->
+            <section id="files" class="content-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-file"></i> File Analysis</h2>
+                    <p>Upload documents, images, or audio files for AI-powered analysis and insights.</p>
+                </div>
+                
+                <div class="upload-container">
+                    <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h3 style="margin-bottom: 10px;">Drop files here or click to upload</h3>
+                        <p style="color: #94a3b8; margin-bottom: 20px;">Supports PDF, TXT, DOCX, images, and audio files</p>
+                        <button class="btn">
+                            <i class="fas fa-upload"></i> Browse Files
+                        </button>
+                    </div>
+                    
+                    <input type="file" id="fileInput" multiple style="display: none;" onchange="handleFileSelect(event)">
+                    
+                    <div class="file-list" id="fileList">
+                        <!-- Files will appear here -->
+                        <div class="file-item">
+                            <div class="file-info">
+                                <div class="file-icon">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                <div>
+                                    <div class="file-name">Documentation.pdf</div>
+                                    <div class="file-size">2.4 MB</div>
+                                </div>
+                            </div>
+                            <div class="file-status status-success">
+                                Processed
+                            </div>
+                        </div>
+                        
+                        <div class="file-item">
+                            <div class="file-info">
+                                <div class="file-icon">
+                                    <i class="fas fa-file-image"></i>
+                                </div>
+                                <div>
+                                    <div class="file-name">Screenshot.png</div>
+                                    <div class="file-size">1.8 MB</div>
+                                </div>
+                            </div>
+                            <div class="file-status status-success">
+                                Processed
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Model Management Section -->
+            <section id="models" class="content-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-brain"></i> Model Management</h2>
+                    <p>Load, unload, and switch between different AI models. All models run locally on your machine.</p>
+                </div>
+                
+                <div class="models-grid">
+                    <div class="model-card active">
+                        <div class="model-header">
+                            <div class="model-title">
+                                <i class="fas fa-check-circle" style="color: #10b981;"></i> Llama 3.1 8B
+                            </div>
+                            <div class="model-status status-loaded">Loaded</div>
+                        </div>
+                        <div class="model-desc">
+                            8 billion parameter model optimized for general tasks. Balanced performance and speed.
+                        </div>
+                        <div class="model-stats">
+                            <div><i class="fas fa-database"></i> Size: 4.7 GB</div>
+                            <div><i class="fas fa-memory"></i> VRAM: 6 GB</div>
+                        </div>
+                        <button class="btn-secondary" onclick="unloadModel('llama')">
+                            <i class="fas fa-stop"></i> Unload Model
+                        </button>
+                    </div>
+                    
+                    <div class="model-card">
+                        <div class="model-header">
+                            <div class="model-title">
+                                <i class="fas fa-download"></i> Mistral 7B
+                            </div>
+                            <div class="model-status status-available">Available</div>
+                        </div>
+                        <div class="model-desc">
+                            7 billion parameter model optimized for instruction following and code generation.
+                        </div>
+                        <div class="model-stats">
+                            <div><i class="fas fa-database"></i> Size: 4.2 GB</div>
+                            <div><i class="fas fa-memory"></i> VRAM: 5 GB</div>
+                        </div>
+                        <button class="btn" onclick="loadModel('mistral')">
+                            <i class="fas fa-play"></i> Load Model
+                        </button>
+                    </div>
+                    
+                    <div class="model-card">
+                        <div class="model-header">
+                            <div class="model-title">
+                                <i class="fas fa-download"></i> Gemma 2B
+                            </div>
+                            <div class="model-status status-available">Available</div>
+                        </div>
+                        <div class="model-desc">
+                            Lightweight 2 billion parameter model for faster inference and lower resource usage.
+                        </div>
+                        <div class="model-stats">
+                            <div><i class="fas fa-database"></i> Size: 1.5 GB</div>
+                            <div><i class="fas fa-memory"></i> VRAM: 2 GB</div>
+                        </div>
+                        <button class="btn" onclick="loadModel('gemma')">
+                            <i class="fas fa-play"></i> Load Model
+                        </button>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- API & Tools Section -->
+            <section id="api" class="content-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-code"></i> API & Tools</h2>
+                    <p>Integrate your local AI agent with other applications using our API and tools.</p>
+                </div>
+                
+                <div class="api-container">
+                    <div class="api-key-box">
+                        <h3 style="margin-bottom: 16px;">Your API Key</h3>
+                        <p style="color: #94a3b8; margin-bottom: 16px;">Use this key to authenticate API requests:</p>
+                        <div class="api-key" id="apiKey">local_ai_sk_1234567890abcdef</div>
+                        <button class="btn" onclick="copyApiKey()">
+                            <i class="fas fa-copy"></i> Copy API Key
+                        </button>
+                        <button class="btn-secondary" onclick="generateNewApiKey()" style="margin-left: 12px;">
+                            <i class="fas fa-sync"></i> Generate New Key
+                        </button>
+                    </div>
+                    
+                    <div class="api-endpoints">
+                        <h3 style="margin-bottom: 20px;">API Endpoints</h3>
+                        
+                        <div class="endpoint">
+                            <div class="endpoint-header">
+                                <span class="method method-post">POST</span>
+                                <span class="endpoint-url">/api/ai/generate</span>
+                            </div>
+                            <div class="endpoint-desc">
+                                Generate AI responses. Send a prompt and receive AI-generated text.
+                            </div>
+                        </div>
+                        
+                        <div class="endpoint">
+                            <div class="endpoint-header">
+                                <span class="method method-post">POST</span>
+                                <span class="endpoint-url">/api/ai/analyze-file</span>
+                            </div>
+                            <div class="endpoint-desc">
+                                Upload and analyze files. Supports multiple file formats.
+                            </div>
+                        </div>
+                        
+                        <div class="endpoint">
+                            <div class="endpoint-header">
+                                <span class="method method-get">GET</span>
+                                <span class="endpoint-url">/api/models</span>
+                            </div>
+                            <div class="endpoint-desc">
+                                List available AI models and their status.
+                            </div>
+                        </div>
+                        
+                        <div class="endpoint">
+                            <div class="endpoint-header">
+                                <span class="method method-post">POST</span>
+                                <span class="endpoint-url">/api/models/load</span>
+                            </div>
+                            <div class="endpoint-desc">
+                                Load a specific AI model into memory.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn" onclick="openApiDocumentation()">
+                        <i class="fas fa-book"></i> View Full Documentation
+                    </button>
+                </div>
+            </section>
+            
+            <!-- Settings Section -->
+            <section id="settings" class="content-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-cog"></i> Settings</h2>
+                    <p>Configure your Local AI Agent settings and preferences.</p>
+                </div>
+                <p style="color: #94a3b8; padding: 40px; text-align: center;">
+                    Settings panel coming soon...
+                </p>
+            </section>
+            
+            <!-- Analytics Section -->
+            <section id="analytics" class="content-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-bar"></i> Analytics</h2>
+                    <p>View usage statistics and performance metrics.</p>
+                </div>
+                <p style="color: #94a3b8; padding: 40px; text-align: center;">
+                    Analytics dashboard coming soon...
+                </p>
+            </section>
+        </main>
+    </div>
+    
+    <script>
+        // Global variables
+        let currentSession = 'General Assistant';
+        
+        // Check authentication on page load
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/check-auth');
+                const data = await response.json();
+                
+                if (data.authenticated && data.user) {
+                    const username = data.user.username;
+                    document.getElementById('userAvatar').textContent = username.charAt(0).toUpperCase();
+                } else {
+                    window.location.href = '/login.html';
+                }
+            } catch (error) {
+                console.error('Auth check error:', error);
+                window.location.href = '/login.html';
+            }
+        }
+        
+        // Switch between sections
+        function switchSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Update active nav item
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.onclick && item.onclick.toString().includes(`'${sectionId}'`)) {
+                    item.classList.add('active');
+                }
+            });
+            
+            // Special handling for dashboard card clicks
+            if (sectionId === 'dashboard') {
+                document.querySelector('.nav-item[onclick="switchSection(\'dashboard\')"]').classList.add('active');
+            }
+        }
+        
+        // Logout function
+        async function logout() {
+            try {
+                await fetch('/api/logout', {
+                    method: 'POST'
+                });
+                window.location.href = '/login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = '/login.html';
+            }
+        }
+        
+        // ========== CHAT FUNCTIONALITY ==========
+        function newChatSession() {
+            const sessions = document.querySelectorAll('.session');
+            sessions.forEach(session => session.classList.remove('active'));
+            
+            const newSession = document.createElement('div');
+            newSession.className = 'session active';
+            newSession.textContent = 'New Chat ' + (document.querySelectorAll('.session').length + 1);
+            newSession.onclick = function() {
+                document.querySelectorAll('.session').forEach(s => s.classList.remove('active'));
+                this.classList.add('active');
+                currentSession = this.textContent;
+            };
+            
+            document.querySelector('.chat-sessions').appendChild(newSession);
+            document.getElementById('chatMessages').innerHTML = `
+                <div class="message ai-message">
+                    <div class="message-header">
+                        <i class="fas fa-robot"></i> Local AI Assistant
+                    </div>
+                    <div class="message-content">
+                        Hello! I'm your local AI assistant. This is a new chat session.
+                    </div>
+                </div>
+            `;
+            
+            currentSession = newSession.textContent;
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            const messagesDiv = document.getElementById('chatMessages');
+            const sendButton = document.getElementById('sendButton');
+            
+            // Add user message
+            messagesDiv.innerHTML += `
+                <div class="message user-message">
+                    <div class="message-header">
+                        <i class="fas fa-user"></i> You
+                    </div>
+                    <div class="message-content">${message}</div>
+                </div>
+            `;
+            
+            // Clear input and disable button
+            input.value = '';
+            sendButton.disabled = true;
+            sendButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Thinking...';
+            
+            // Add thinking indicator
+            messagesDiv.innerHTML += `
+                <div class="message ai-message thinking">
+                    <div class="message-header">
+                        <i class="fas fa-robot"></i> Local AI Assistant
+                    </div>
+                    <div class="message-content">
+                        <div class="thinking-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            try {
+                // Send to backend
+                const response = await fetch('/api/ai/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        prompt: message,
+                        session: currentSession 
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Remove thinking indicator
+                const thinking = document.querySelector('.thinking');
+                if (thinking) thinking.remove();
+                
+                // Add AI response
+                messagesDiv.innerHTML += `
+                    <div class="message ai-message">
+                        <div class="message-header">
+                            <i class="fas fa-robot"></i> Local AI Assistant
+                        </div>
+                        <div class="message-content">${data.response || "I'm processing your request locally..."}</div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Chat error:', error);
+                
+                // Remove thinking indicator
+                const thinking = document.querySelector('.thinking');
+                if (thinking) thinking.remove();
+                
+                // Add error message
+                messagesDiv.innerHTML += `
+                    <div class="message ai-message">
+                        <div class="message-header">
+                            <i class="fas fa-robot"></i> Local AI Assistant
+                        </div>
+                        <div class="message-content">I'm running locally on your machine. For now, here's a sample response to: "${message}"</div>
+                    </div>
+                `;
+            }
+            
+            // Re-enable button
+            sendButton.disabled = false;
+            sendButton.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        // Chat input keyboard shortcuts
+        document.getElementById('chatInput')?.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // ========== FILE UPLOAD FUNCTIONALITY ==========
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            const fileListDiv = document.getElementById('fileList');
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const fileSize = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+                
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <div class="file-info">
+                        <div class="file-icon">
+                            <i class="fas fa-file"></i>
+                        </div>
+                        <div>
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-size">${fileSize}</div>
+                        </div>
+                    </div>
+                    <div class="file-status status-processing">
+                        Processing...
+                    </div>
+                `;
+                
+                fileListDiv.appendChild(fileItem);
+                
+                // Simulate processing
+                setTimeout(() => {
+                    fileItem.querySelector('.status-processing').className = 'file-status status-success';
+                    fileItem.querySelector('.status-success').textContent = 'Processed';
+                    alert(`File "${file.name}" has been processed locally!`);
+                }, 2000);
+            }
+        }
+        
+        // Drag and drop for files
+        const uploadArea = document.getElementById('uploadArea');
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', function() {
+            this.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+            
+            const fileInput = document.getElementById('fileInput');
+            fileInput.files = e.dataTransfer.files;
+            handleFileSelect({ target: fileInput });
+        });
+        
+        // ========== MODEL MANAGEMENT ==========
+        function loadModel(modelName) {
+            alert(`Loading ${modelName} model locally... This may take a moment.`);
+            
+            // Update UI
+            const cards = document.querySelectorAll('.model-card');
+            cards.forEach(card => card.classList.remove('active'));
+            
+            const modelCard = document.querySelector(`[onclick="loadModel('${modelName}')"]`).closest('.model-card');
+            modelCard.classList.add('active');
+            
+            const status = modelCard.querySelector('.model-status');
+            status.className = 'model-status status-loaded';
+            status.textContent = 'Loaded';
+            
+            const button = modelCard.querySelector('button');
+            button.className = 'btn-secondary';
+            button.innerHTML = '<i class="fas fa-stop"></i> Unload Model';
+            button.onclick = function() { unloadModel(modelName); };
+        }
+        
+        function unloadModel(modelName) {
+            alert(`Unloading ${modelName} model...`);
+            
+            const modelCard = document.querySelector(`[onclick="unloadModel('${modelName}')"]`).closest('.model-card');
+            modelCard.classList.remove('active');
+            
+            const status = modelCard.querySelector('.model-status');
+            status.className = 'model-status status-available';
+            status.textContent = 'Available';
+            
+            const button = modelCard.querySelector('button');
+            button.className = 'btn';
+            button.innerHTML = '<i class="fas fa-play"></i> Load Model';
+            button.onclick = function() { loadModel(modelName); };
+        }
+        
+        // ========== API & TOOLS ==========
+        function copyApiKey() {
+            const apiKey = document.getElementById('apiKey').textContent;
+            navigator.clipboard.writeText(apiKey).then(() => {
+                alert('API key copied to clipboard!');
+            });
+        }
+        
+        function generateNewApiKey() {
+            const newKey = 'local_ai_sk_' + Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+            document.getElementById('apiKey').textContent = newKey;
+            alert('New API key generated!');
+        }
+        
+        function openApiDocumentation() {
+            alert('Opening API documentation...');
+            // In a real app, this would open documentation
+        }
+        
+        // ========== UTILITY FUNCTIONS ==========
+        function showSystemInfo() {
+            alert('Local AI Agent\nVersion: 1.0.0\nStatus: Running Locally\nPrivacy: 100% Local Processing');
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            
+            // Set up session click handlers
+            document.querySelectorAll('.session').forEach(session => {
+                session.addEventListener('click', function() {
+                    document.querySelectorAll('.session').forEach(s => s.classList.remove('active'));
+                    this.classList.add('active');
+                    currentSession = this.textContent;
+                });
+            });
+        });
+    </script>
+</body>
+</html>

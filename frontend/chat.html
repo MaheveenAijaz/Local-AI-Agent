@@ -1,0 +1,1775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - Local AI Agent</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #363636;
+            --text-primary: #ffffff;
+            --text-secondary: #b3b3b3;
+            --accent: #667eea;
+            --accent-dark: #5a67d8;
+            --user-message: #2b3a55;
+            --ai-message: #2d2d2d;
+            --border: #404040;
+            --sidebar-width: 260px;
+            --header-height: 60px;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f7f7f8;
+            --bg-tertiary: #ececf1;
+            --text-primary: #353740;
+            --text-secondary: #6e6e80;
+            --accent: #667eea;
+            --accent-dark: #5a67d8;
+            --user-message: #e3f2fd;
+            --ai-message: #f7f7f8;
+            --border: #e5e5e5;
+        }
+
+        [data-theme="blue"] {
+            --bg-primary: #1e3c72;
+            --bg-secondary: #29539b;
+            --bg-tertiary: #1e3c72;
+            --text-primary: #ffffff;
+            --text-secondary: #e0e0e0;
+            --accent: #4facfe;
+            --accent-dark: #00c6fb;
+            --user-message: #2a5298;
+            --ai-message: #1e3c72;
+            --border: #2a5298;
+        }
+
+        [data-theme="green"] {
+            --bg-primary: #1f4f43;
+            --bg-secondary: #2e7d5e;
+            --bg-tertiary: #1f4f43;
+            --text-primary: #ffffff;
+            --text-secondary: #e0e0e0;
+            --accent: #4caf50;
+            --accent-dark: #45a049;
+            --user-message: #2e7d5e;
+            --ai-message: #1f4f43;
+            --border: #2e7d5e;
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Header */
+        .header {
+            height: var(--header-height);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+
+        .logo h1 {
+            font-size: 20px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: white;
+        }
+
+        .settings-btn, .logout-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .settings-btn:hover, .logout-btn:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        /* Status Bar */
+        .status-bar {
+            background: var(--bg-tertiary);
+            padding: 5px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 12px;
+            border-bottom: 1px solid var(--border);
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            right: 0;
+            z-index: 99;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.online {
+            background: var(--success);
+            box-shadow: 0 0 5px var(--success);
+        }
+
+        .status-dot.warning {
+            background: var(--warning);
+            box-shadow: 0 0 5px var(--warning);
+        }
+
+        .status-dot.offline {
+            background: var(--error);
+            box-shadow: 0 0 5px var(--error);
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .status-text {
+            color: var(--text-secondary);
+        }
+
+        .model-name {
+            color: var(--accent);
+            font-weight: 600;
+            cursor: pointer;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: var(--bg-secondary);
+        }
+
+        .model-name:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* Chat Container */
+        .chat-container {
+            display: flex;
+            height: calc(100vh - var(--header-height) - 30px);
+            margin-top: calc(var(--header-height) + 30px);
+        }
+
+        /* Sidebar */
+        .chat-sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-header h3 {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        .new-chat-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+
+        .new-chat-btn:hover {
+            background: var(--accent-dark);
+            transform: translateY(-1px);
+        }
+
+        .files-section {
+            padding: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .files-section h4 {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .files-list {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            border-left: 3px solid var(--accent);
+        }
+
+        .file-item i {
+            color: var(--accent);
+        }
+
+        .file-item .file-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-item .file-size {
+            font-size: 10px;
+            opacity: 0.7;
+        }
+
+        .search-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .empty-search {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 30px 0;
+        }
+
+        .empty-search i {
+            font-size: 40px;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+
+        /* Main Chat Area */
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-title {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .action-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .simple-welcome {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .simple-welcome-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            color: var(--accent);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .simple-welcome-title {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .simple-welcome-subtitle {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+
+        /* Messages */
+        .message {
+            max-width: 80%;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            align-self: flex-end;
+        }
+
+        .ai-message {
+            align-self: flex-start;
+        }
+
+        .message-header {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            padding: 0 12px;
+        }
+
+        .message-content {
+            background: var(--bg-tertiary);
+            padding: 12px 16px;
+            border-radius: 18px;
+            color: var(--text-primary);
+            line-height: 1.5;
+            font-size: 14px;
+            word-wrap: break-word;
+        }
+
+        .user-message .message-content {
+            background: var(--accent);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .ai-message .message-content {
+            background: var(--bg-secondary);
+            border-bottom-left-radius: 4px;
+        }
+
+        /* File Upload Preview */
+        .file-preview-container {
+            padding: 10px 20px 0 20px;
+        }
+
+        .file-preview {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid var(--accent);
+            animation: slideUp 0.3s ease;
+        }
+
+        .file-preview i {
+            font-size: 24px;
+            color: var(--accent);
+        }
+
+        .file-preview-info {
+            flex: 1;
+        }
+
+        .file-preview-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .file-preview-size {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .file-preview-remove {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 18px;
+            padding: 5px;
+        }
+
+        .file-preview-remove:hover {
+            color: var(--error);
+        }
+
+        /* Input Area */
+        .chat-input-container {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+        }
+
+        .chat-input textarea {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.5;
+            max-height: 150px;
+            resize: none;
+            outline: none;
+            padding: 8px;
+        }
+
+        .chat-input textarea::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .chat-input textarea:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .input-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .upload-btn, .send-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .upload-btn {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .upload-btn:hover:not(:disabled) {
+            background: var(--accent);
+            color: white;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            background: var(--accent-dark);
+            transform: translateY(-1px);
+        }
+
+        .upload-btn:disabled, .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .input-hint {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            text-align: right;
+        }
+
+        /* Settings Modal */
+        .settings-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .settings-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .settings-content {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .settings-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .settings-title {
+            font-size: 18px;
+            color: var(--text-primary);
+        }
+
+        .close-settings {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-settings:hover {
+            color: var(--accent);
+        }
+
+        .settings-body {
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .settings-section {
+            margin-bottom: 25px;
+        }
+
+        .setting-label {
+            display: block;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Theme Toggle Buttons */
+        .theme-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .theme-btn {
+            flex: 1;
+            min-width: 80px;
+            padding: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .theme-btn:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .theme-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .theme-btn i {
+            font-size: 14px;
+        }
+
+        /* Model Select */
+        .model-select {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .model-select option {
+            background: var(--bg-secondary);
+        }
+
+        .refresh-models-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .refresh-models-btn:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .current-model-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            border-left: 3px solid var(--accent);
+        }
+
+        .settings-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .save-btn, .cancel-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .save-btn {
+            background: var(--accent);
+            color: white;
+        }
+
+        .save-btn:hover {
+            background: var(--accent-dark);
+        }
+
+        .cancel-btn {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .cancel-btn:hover {
+            background: var(--border);
+        }
+
+        /* Loading indicator */
+        .loading-dots {
+            display: inline-flex;
+            gap: 4px;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border-radius: 18px;
+            border-bottom-left-radius: 4px;
+        }
+
+        .loading-dots span {
+            width: 8px;
+            height: 8px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        /* Notification styles */
+        .notification {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 12px;
+            background: var(--bg-secondary);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 1000;
+            max-width: 350px;
+            animation: slideIn 0.3s ease;
+            border-left: 4px solid;
+        }
+
+        .notification.hidden {
+            animation: slideOut 0.3s ease forwards;
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100px); opacity: 0; }
+        }
+
+        .notification-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .notification.success { border-left-color: var(--success); }
+        .notification.success .notification-icon { background: var(--success); color: white; }
+        .notification.error { border-left-color: var(--error); }
+        .notification.error .notification-icon { background: var(--error); color: white; }
+        .notification.warning { border-left-color: var(--warning); }
+        .notification.warning .notification-icon { background: var(--warning); color: white; }
+        .notification.info { border-left-color: var(--accent); }
+        .notification.info .notification-icon { background: var(--accent); color: white; }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-content strong {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+        }
+
+        .notification-content p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .close-notification {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            font-size: 18px;
+        }
+
+        .close-notification:hover {
+            color: var(--text-primary);
+        }
+
+        /* Debug Panel */
+        .debug-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            max-width: 300px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .debug-panel.visible {
+            display: block;
+        }
+
+        .debug-panel pre {
+            margin: 5px 0 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+
+        .debug-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+            z-index: 1000;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .debug-toggle:hover {
+            opacity: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .chat-sidebar {
+                position: fixed;
+                left: -260px;
+                transition: left 0.3s;
+                z-index: 90;
+            }
+            
+            .chat-sidebar.active {
+                left: 0;
+            }
+            
+            .message {
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+<body data-theme="dark">
+    <div id="notificationContainer"></div>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="logo">
+            <h1>Local AI Agent</h1>
+            <span class="logo-subtitle"></span>
+        </div>
+        <div class="user-info">
+            <div class="avatar" id="userAvatar">U</div>
+            <button class="settings-btn" id="settingsBtn"><i class="fas fa-cog"></i></button>
+            <button class="logout-btn" id="logoutBtn">Logout</button>
+        </div>
+    </header>
+
+    <!-- STATUS BAR -->
+    <div class="status-bar" id="statusBar">
+        <div class="status-indicator">
+            <div class="status-dot offline" id="statusDot"></div>
+            <span class="status-text" id="statusText">Checking Ollama...</span>
+        </div>
+        <div class="status-indicator">
+            <i class="fas fa-microchip"></i>
+            <span class="model-name" id="modelName" title="Click to change model in settings">qwen2.5:0.5b</span>
+        </div>
+    </div>
+
+    <!-- CHAT CONTAINER -->
+    <div class="chat-container">
+        <!-- SIDEBAR -->
+        <aside class="chat-sidebar">
+            <div class="sidebar-header">
+                <h3>History</h3>
+                <button class="new-chat-btn" id="newChatBtn"><i class="fas fa-plus"></i> New Chat</button>
+            </div>
+            
+            <!-- Uploaded Files Section -->
+            <div class="files-section">
+                <h4><i class="fas fa-file-alt"></i> Uploaded Files</h4>
+                <div class="files-list" id="filesList">
+                    <div class="empty-search" style="padding: 10px;">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p style="font-size: 12px;">No files uploaded</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="search-history" id="historyList">
+                <div class="empty-search">
+                    <i class="fas fa-clock"></i>
+                    <p>No chats yet</p>
+                    <p style="font-size: 12px; margin-top: 10px;">Start a conversation to see history</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CHAT -->
+        <main class="chat-main">
+            <div class="chat-header">
+                <h2 class="chat-title">Welcome, <span id="usernameDisplay">User</span>!</h2>
+                <div class="chat-actions">
+                    <button class="action-btn" id="clearChatBtn">Clear</button>
+                </div>
+            </div>
+            
+            <!-- File Upload Preview (appears when file is selected) -->
+            <div class="file-preview-container" id="filePreviewContainer" style="display: none;">
+                <div class="file-preview" id="filePreview">
+                    <i class="fas fa-file-alt"></i>
+                    <div class="file-preview-info">
+                        <div class="file-preview-name" id="filePreviewName">filename.txt</div>
+                        <div class="file-preview-size" id="filePreviewSize">0 KB</div>
+                    </div>
+                    <button class="file-preview-remove" id="filePreviewRemove" title="Remove file">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="chat-messages" id="chatMessages">
+                <div class="simple-welcome">
+                    <div class="simple-welcome-icon"><i class="fas fa-robot"></i></div>
+                    <h3 class="simple-welcome-title">Hello!</h3>
+                    <p class="simple-welcome-subtitle">Start a conversation by typing below.</p>
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <div class="chat-input-wrapper">
+                    <div class="chat-input">
+                        <textarea id="messageInput" placeholder="Type a message..." rows="1" disabled></textarea>
+                    </div>
+                    <div class="input-buttons">
+                        <button class="upload-btn" id="uploadBtn" disabled><i class="fas fa-file-upload"></i></button>
+                        <button class="send-btn" id="sendBtn" disabled>Send</button>
+                    </div>
+                </div>
+                <div class="input-hint">Press Enter to send your message</div>
+            </div>
+        </main>
+    </div>
+
+    <!-- File Upload Input -->
+    <input type="file" id="fileInput" style="display: none;" accept=".txt,.pdf,.docx">
+
+    <!-- SETTINGS MODAL -->
+    <div class="settings-modal" id="settingsModal">
+        <div class="settings-content">
+            <div class="settings-header">
+                <h2 class="settings-title">Settings</h2>
+                <button class="close-settings" id="closeSettingsBtn">&times;</button>
+            </div>
+            <div class="settings-body">
+                <!-- Theme Selection with Buttons -->
+                <div class="settings-section">
+                    <label class="setting-label">Theme:</label>
+                    <div class="theme-buttons">
+                        <button class="theme-btn" data-theme="dark" id="themeDarkBtn">
+                            <i class="fas fa-moon"></i> Dark
+                        </button>
+                        <button class="theme-btn" data-theme="light" id="themeLightBtn">
+                            <i class="fas fa-sun"></i> Light
+                        </button>
+                        <button class="theme-btn" data-theme="blue" id="themeBlueBtn">
+                            <i class="fas fa-water"></i> Blue
+                        </button>
+                        <button class="theme-btn" data-theme="green" id="themeGreenBtn">
+                            <i class="fas fa-leaf"></i> Green
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Model Selection -->
+                <div class="settings-section">
+                    <label class="setting-label">Model:</label>
+                    <select class="model-select" id="modelSelect">
+                        <option value="">Loading models...</option>
+                    </select>
+                    <button class="refresh-models-btn" id="refreshModelsBtn">
+                        <i class="fas fa-sync-alt"></i> Refresh Models
+                    </button>
+                    <div class="current-model-info" id="currentModelInfo">
+                        Current: <span id="currentModelName">qwen2.5:0.5b</span>
+                    </div>
+                </div>
+
+                <!-- Uploaded Files Info -->
+                <div class="settings-section">
+                    <label class="setting-label">Uploaded Files:</label>
+                    <div id="settingsFilesList" style="max-height: 100px; overflow-y: auto;">
+                        <p style="color: var(--text-secondary); font-size: 12px;">No files uploaded</p>
+                    </div>
+                </div>
+            </div>
+            <div class="settings-footer">
+                <button class="save-btn" id="saveSettingsBtn">Save</button>
+                <button class="cancel-btn" id="cancelSettingsBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DEBUG PANEL -->
+    <div class="debug-panel" id="debugPanel">
+        <strong>Debug Info</strong>
+        <pre id="debugContent">Loading...</pre>
+    </div>
+    <div class="debug-toggle" id="debugToggle" title="Toggle Debug Panel">🐛</div>
+
+    <script>
+        // ==================== GLOBAL VARIABLES ====================
+        let ollamaStatus = {
+            running: false,
+            modelAvailable: false,
+            models: [],
+            currentModel: 'qwen2.5:0.5b',
+            error: null
+        };
+        let debugMode = false;
+        let uploadedFiles = [];
+        let currentFile = null;
+
+        // ==================== NOTIFICATION SYSTEM ====================
+        function showNotification(message, type = 'info', duration = 4000) {
+            const container = document.getElementById('notificationContainer');
+            const id = 'n-' + Date.now();
+            const icons = {
+                success: '✓',
+                error: '✗',
+                warning: '⚠️',
+                info: '🤖'
+            };
+            
+            const notification = document.createElement('div');
+            notification.id = id;
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <div class="notification-icon">${icons[type] || icons.info}</div>
+                <div class="notification-content">
+                    <strong>${type.toUpperCase()}</strong>
+                    <p>${message}</p>
+                </div>
+                <button class="close-notification" onclick="closeNotification('${id}')">×</button>
+            `;
+            
+            container.appendChild(notification);
+            
+            if (duration > 0) {
+                setTimeout(() => closeNotification(id), duration);
+            }
+        }
+
+        function closeNotification(id) {
+            const notification = document.getElementById(id);
+            if (notification) {
+                notification.classList.add('hidden');
+                setTimeout(() => notification.remove(), 300);
+            }
+        }
+
+        // ==================== DEBUG FUNCTIONS ====================
+        function toggleDebug() {
+            debugMode = !debugMode;
+            const panel = document.getElementById('debugPanel');
+            panel.classList.toggle('visible', debugMode);
+            if (debugMode) {
+                updateDebugInfo();
+            }
+        }
+
+        async function updateDebugInfo() {
+            if (!debugMode) return;
+            
+            const debugContent = document.getElementById('debugContent');
+            const info = {
+                auth: {
+                    isLoggedIn: localStorage.getItem('isLoggedIn'),
+                    username: localStorage.getItem('username'),
+                    userId: localStorage.getItem('userId')
+                },
+                ollama: ollamaStatus,
+                uploadedFiles: uploadedFiles,
+                currentFile: currentFile,
+                theme: document.body.getAttribute('data-theme'),
+                timestamp: new Date().toISOString()
+            };
+            
+            debugContent.textContent = JSON.stringify(info, null, 2);
+        }
+
+        // ==================== AUTHENTICATION ====================
+        function checkAuth() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            const username = localStorage.getItem('username');
+            const userId = localStorage.getItem('userId');
+            
+            console.log('Auth check:', { isLoggedIn, username, userId });
+            
+            if (!isLoggedIn || !username) {
+                console.log('Not logged in, redirecting to login');
+                window.location.href = 'login.html';
+                return false;
+            }
+            
+            document.getElementById('usernameDisplay').textContent = username;
+            document.getElementById('userAvatar').textContent = username.charAt(0).toUpperCase();
+            return true;
+        }
+
+        // ==================== FILE UPLOAD HANDLING ====================
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function showFilePreview(file) {
+            const previewContainer = document.getElementById('filePreviewContainer');
+            const previewName = document.getElementById('filePreviewName');
+            const previewSize = document.getElementById('filePreviewSize');
+            
+            previewName.textContent = file.name;
+            previewSize.textContent = formatFileSize(file.size);
+            previewContainer.style.display = 'block';
+            
+            currentFile = file;
+            updateDebugInfo();
+        }
+
+        function hideFilePreview() {
+            document.getElementById('filePreviewContainer').style.display = 'none';
+            document.getElementById('fileInput').value = '';
+            currentFile = null;
+            updateDebugInfo();
+        }
+
+        function addFileToList(file) {
+            uploadedFiles.push({
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                uploadedAt: new Date().toISOString()
+            });
+            
+            updateFilesList();
+            updateDebugInfo();
+        }
+
+        function updateFilesList() {
+            const filesList = document.getElementById('filesList');
+            const settingsFilesList = document.getElementById('settingsFilesList');
+            
+            if (uploadedFiles.length === 0) {
+                filesList.innerHTML = `
+                    <div class="empty-search" style="padding: 10px;">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p style="font-size: 12px;">No files uploaded</p>
+                    </div>
+                `;
+                settingsFilesList.innerHTML = '<p style="color: var(--text-secondary); font-size: 12px;">No files uploaded</p>';
+                return;
+            }
+            
+            // Update sidebar files list
+            filesList.innerHTML = uploadedFiles.map(file => `
+                <div class="file-item">
+                    <i class="fas fa-file-alt"></i>
+                    <span class="file-name">${file.name}</span>
+                    <span class="file-size">${formatFileSize(file.size)}</span>
+                </div>
+            `).join('');
+            
+            // Update settings files list
+            settingsFilesList.innerHTML = uploadedFiles.map(file => `
+                <div style="padding: 5px; border-bottom: 1px solid var(--border); font-size: 12px;">
+                    <i class="fas fa-file" style="color: var(--accent); margin-right: 5px;"></i>
+                    ${file.name} (${formatFileSize(file.size)})
+                </div>
+            `).join('');
+        }
+
+        async function handleFileUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            // Show preview immediately
+            showFilePreview(file);
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                showNotification('Uploading file...', 'info');
+                
+                const userId = localStorage.getItem('userId');
+                
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    headers: {
+                        'X-USER-ID': userId
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    addFileToList(file);
+                    showNotification(`File "${file.name}" uploaded successfully!`, 'success');
+                } else {
+                    showNotification(data.error || 'Upload failed', 'error');
+                    hideFilePreview();
+                }
+            } catch (err) {
+                console.error('Upload error:', err);
+                showNotification('Upload failed: ' + err.message, 'error');
+                hideFilePreview();
+            }
+        }
+
+        // ==================== OLLAMA STATUS CHECK ====================
+        async function checkOllamaStatus() {
+            updateDebugInfo();
+            
+            try {
+                const response = await fetch('/api/check-ollama');
+                const data = await response.json();
+                
+                ollamaStatus = {
+                    running: data.ollama_running || false,
+                    modelAvailable: data.model_available || false,
+                    models: data.models || [],
+                    currentModel: data.current_model || ollamaStatus.currentModel,
+                    error: data.error || null
+                };
+                
+                updateStatusUI(data);
+                updateModelSelect();
+                updateDebugInfo();
+                
+                return ollamaStatus;
+            } catch (err) {
+                console.error('Error checking Ollama:', err);
+                
+                ollamaStatus = {
+                    running: false,
+                    modelAvailable: false,
+                    models: [],
+                    currentModel: ollamaStatus.currentModel,
+                    error: err.message
+                };
+                
+                updateStatusUI({ ollama_running: false, error: err.message });
+                updateModelSelect();
+                updateDebugInfo();
+                
+                return ollamaStatus;
+            }
+        }
+
+        function updateStatusUI(data) {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const modelName = document.getElementById('modelName');
+            const messageInput = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            if (data.ollama_running && data.model_available) {
+                // Everything is working
+                statusDot.className = 'status-dot online';
+                statusText.textContent = 'Connected';
+                modelName.textContent = data.current_model || ollamaStatus.currentModel;
+                
+                // Enable inputs
+                messageInput.disabled = false;
+                sendBtn.disabled = false;
+                uploadBtn.disabled = false;
+                
+            } else if (data.ollama_running && !data.model_available) {
+                // Ollama running but model missing
+                statusDot.className = 'status-dot warning';
+                statusText.textContent = 'Model Missing';
+                modelName.textContent = 'Run: ollama pull ' + ollamaStatus.currentModel;
+                
+                // Disable inputs
+                messageInput.disabled = true;
+                sendBtn.disabled = true;
+                uploadBtn.disabled = true;
+                
+                showNotification(`⚠️ Model ${ollamaStatus.currentModel} not found. Please run: ollama pull ${ollamaStatus.currentModel}`, 'warning', 8000);
+                
+            } else {
+                // Ollama not running
+                statusDot.className = 'status-dot offline';
+                statusText.textContent = 'Ollama Offline';
+                modelName.textContent = 'Start: ollama serve';
+                
+                // Disable inputs
+                messageInput.disabled = true;
+                sendBtn.disabled = true;
+                uploadBtn.disabled = true;
+                
+                showNotification('⚠️ Ollama is not running. Please start it with: ollama serve', 'error', 8000);
+            }
+        }
+
+        // ==================== MODEL MANAGEMENT ====================
+        function updateModelSelect() {
+            const modelSelect = document.getElementById('modelSelect');
+            const currentModelName = document.getElementById('currentModelName');
+            
+            if (!ollamaStatus.models || ollamaStatus.models.length === 0) {
+                modelSelect.innerHTML = '<option value="">No models available</option>';
+                return;
+            }
+            
+            modelSelect.innerHTML = ollamaStatus.models.map(model => 
+                `<option value="${model}" ${model === ollamaStatus.currentModel ? 'selected' : ''}>${model}</option>`
+            ).join('');
+            
+            currentModelName.textContent = ollamaStatus.currentModel;
+        }
+
+        async function refreshModels() {
+            showNotification('Refreshing models...', 'info');
+            await checkOllamaStatus();
+        }
+
+        async function changeModel(modelName) {
+            if (!modelName) return;
+            
+            // Update current model
+            ollamaStatus.currentModel = modelName;
+            localStorage.setItem('selectedModel', modelName);
+            
+            // Update UI
+            document.getElementById('modelName').textContent = modelName;
+            document.getElementById('currentModelName').textContent = modelName;
+            
+            // Check if model is available
+            if (ollamaStatus.models.includes(modelName)) {
+                ollamaStatus.modelAvailable = true;
+                showNotification(`Model changed to ${modelName}`, 'success');
+            } else {
+                ollamaStatus.modelAvailable = false;
+                showNotification(`Model ${modelName} not found. Please pull it first.`, 'warning');
+            }
+            
+            // Update status
+            updateStatusUI({
+                ollama_running: ollamaStatus.running,
+                model_available: ollamaStatus.modelAvailable,
+                current_model: modelName
+            });
+            
+            updateDebugInfo();
+        }
+
+        // ==================== CHAT FUNCTIONS ====================
+        function autoResizeTextarea() {
+            const textarea = document.getElementById('messageInput');
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+        }
+
+        async function sendMessage() {
+            const textarea = document.getElementById('messageInput');
+            const text = textarea.value.trim();
+            
+            if (!text) return;
+            if (!ollamaStatus.running || !ollamaStatus.modelAvailable) {
+                showNotification('Cannot send message: Ollama is not ready', 'error');
+                return;
+            }
+
+            // Remove welcome message if present
+            const welcome = document.querySelector('.simple-welcome');
+            if (welcome) welcome.remove();
+
+            // Add user message
+            addMessage(text, 'user');
+            textarea.value = '';
+            textarea.style.height = 'auto';
+            
+            // Scroll to bottom
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Show loading indicator
+            const loadingId = showLoadingIndicator();
+
+            try {
+                const userId = localStorage.getItem('userId');
+                
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-USER-ID': userId
+                    },
+                    body: JSON.stringify({ 
+                        message: text,
+                        model: ollamaStatus.currentModel 
+                    })
+                });
+
+                // Remove loading indicator
+                removeLoadingIndicator(loadingId);
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    addMessage(data.response, 'ai');
+                } else {
+                    addMessage('Error: ' + (data.error || 'Could not get response'), 'ai');
+                    showNotification(data.error || 'Failed to get response', 'error');
+                }
+            } catch (err) {
+                // Remove loading indicator
+                removeLoadingIndicator(loadingId);
+                
+                console.error('Chat error:', err);
+                addMessage('Error: Could not connect to server. Make sure the backend is running.', 'ai');
+                showNotification('Connection error. Make sure backend is running on port 8080', 'error');
+            }
+
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            updateDebugInfo();
+        }
+
+        function showLoadingIndicator() {
+            const chatMessages = document.getElementById('chatMessages');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message ai-message loading-message';
+            loadingDiv.id = 'loading-' + Date.now();
+            loadingDiv.innerHTML = `
+                <div class="message-header">AI</div>
+                <div class="loading-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            `;
+            chatMessages.appendChild(loadingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return loadingDiv.id;
+        }
+
+        function removeLoadingIndicator(id) {
+            const loading = document.getElementById(id);
+            if (loading) loading.remove();
+        }
+
+        function addMessage(text, sender) {
+            const chatMessages = document.getElementById('chatMessages');
+            
+            const msg = document.createElement('div');
+            msg.classList.add('message', sender === 'user' ? 'user-message' : 'ai-message');
+
+            const header = document.createElement('div');
+            header.classList.add('message-header');
+            header.textContent = sender === 'user' ? 'You' : 'AI';
+
+            const content = document.createElement('div');
+            content.classList.add('message-content');
+            content.textContent = text;
+
+            msg.appendChild(header);
+            msg.appendChild(content);
+            chatMessages.appendChild(msg);
+        }
+
+        function clearChat() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = `
+                <div class="simple-welcome">
+                    <div class="simple-welcome-icon"><i class="fas fa-robot"></i></div>
+                    <h3 class="simple-welcome-title">Hello!</h3>
+                    <p class="simple-welcome-subtitle">Start a conversation by typing below.</p>
+                </div>
+            `;
+        }
+
+        function newChat() {
+            clearChat();
+        }
+
+        // ==================== THEME MANAGEMENT ====================
+        function setTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            
+            // Update active button state
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`theme${theme.charAt(0).toUpperCase() + theme.slice(1)}Btn`).classList.add('active');
+            
+            showNotification(`Theme changed to ${theme}`, 'success');
+        }
+
+        // ==================== SETTINGS ====================
+        function setupSettings() {
+            const settingsModal = document.getElementById('settingsModal');
+            const currentTheme = document.body.getAttribute('data-theme') || 'dark';
+            
+            // Set active theme button
+            document.getElementById(`theme${currentTheme.charAt(0).toUpperCase() + currentTheme.slice(1)}Btn`).classList.add('active');
+            
+            // Theme buttons
+            document.getElementById('themeDarkBtn').addEventListener('click', () => setTheme('dark'));
+            document.getElementById('themeLightBtn').addEventListener('click', () => setTheme('light'));
+            document.getElementById('themeBlueBtn').addEventListener('click', () => setTheme('blue'));
+            document.getElementById('themeGreenBtn').addEventListener('click', () => setTheme('green'));
+
+            // Settings modal open/close
+            document.getElementById('settingsBtn').addEventListener('click', () => {
+                updateModelSelect();
+                updateFilesList();
+                settingsModal.classList.add('active');
+            });
+
+            document.getElementById('closeSettingsBtn').addEventListener('click', () => {
+                settingsModal.classList.remove('active');
+            });
+
+            document.getElementById('cancelSettingsBtn').addEventListener('click', () => {
+                settingsModal.classList.remove('active');
+            });
+
+            // Model selection
+            document.getElementById('modelSelect').addEventListener('change', (e) => {
+                changeModel(e.target.value);
+            });
+
+            document.getElementById('refreshModelsBtn').addEventListener('click', refreshModels);
+
+            // Save settings
+            document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+                settingsModal.classList.remove('active');
+                showNotification('Settings saved!', 'success');
+            });
+        }
+
+        // ==================== LOGOUT ====================
+        function setupLogout() {
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                localStorage.clear();
+                window.location.href = 'login.html';
+            });
+        }
+
+        // ==================== INITIALIZATION ====================
+        function initialize() {
+            console.log('Initializing chat...');
+            
+            // Check authentication first
+            if (!checkAuth()) return;
+            
+            // Auto-resize textarea
+            autoResizeTextarea();
+            
+            // Setup event listeners
+            document.getElementById('sendBtn').addEventListener('click', sendMessage);
+            document.getElementById('newChatBtn').addEventListener('click', newChat);
+            document.getElementById('clearChatBtn').addEventListener('click', clearChat);
+            
+            // File upload
+            document.getElementById('uploadBtn').addEventListener('click', () => {
+                document.getElementById('fileInput').click();
+            });
+            document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+            document.getElementById('filePreviewRemove').addEventListener('click', hideFilePreview);
+            
+            // Model name click opens settings
+            document.getElementById('modelName').addEventListener('click', () => {
+                document.getElementById('settingsBtn').click();
+            });
+            
+            // Textarea Enter key
+            document.getElementById('messageInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // Setup settings
+            setupSettings();
+            
+            // Setup logout
+            setupLogout();
+            
+            // Load saved theme
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                setTheme(savedTheme);
+            }
+            
+            // Load saved model
+            const savedModel = localStorage.getItem('selectedModel');
+            if (savedModel) {
+                ollamaStatus.currentModel = savedModel;
+            }
+            
+            // Setup debug toggle
+            document.getElementById('debugToggle').addEventListener('click', toggleDebug);
+            
+            // Check Ollama status
+            checkOllamaStatus();
+            
+            // Periodically check Ollama status (every 30 seconds)
+            setInterval(checkOllamaStatus, 30000);
+            
+            console.log('Initialization complete');
+        }
+
+        // Start everything when page loads
+        window.addEventListener('load', initialize);
+    </script>
+</body>
+</html>
